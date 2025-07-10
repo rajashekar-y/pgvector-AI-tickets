@@ -1,0 +1,201 @@
+1.  **Frontend (`analytics_dashboard.html`):** A static HTML page that runs in the browser, fetching data from the Flask API via JavaScript.
+2.  **Backend (`app.py`):** A Flask application exposing RESTful API endpoints. It processes incoming requests, interacts with the PostgreSQL database, and communicates with the OpenAI (or custom) LLM for AI functionalities.
+3.  **Database (PostgreSQL + `pgvector`):** Stores all support ticket data, including unique identifiers, customer information, ticket content, AI classifications, and the generated vector embeddings.
+4.  **AI Service (OpenAI / Custom LLM):** Provides the intelligence for generating embeddings, classifying tickets, and suggesting responses.
+5.  **Utility/Testing (`test_support.py`):** A Python script for testing API endpoints and simulating ticket submissions to demonstrate the system's capabilities and populate the database.
+
+---
+
+## Getting Started
+
+Follow these instructions to set up and run the AI Support Ticket System on your local machine.
+
+### Prerequisites
+
+* Python 3.8+
+* `pip` (Python package installer)
+* PostgreSQL database server (ensure `pgvector` extension is enabled and configured)
+* An OpenAI API Key (or credentials for your custom LLM)
+* Git
+
+### Project Setup
+
+1.  **Clone the Repository:**
+    ```bash
+    git clone [https://github.com/rajashekar-y/pgvector-AI-ticket.git](https://github.com/rajashekar-y/pgvector-AI-ticket.git)
+    cd pgvector-AI-ticket
+    ```
+
+2.  **Create a Virtual Environment:**
+    ```bash
+    python -m venv ai_support_env
+    ```
+
+3.  **Activate the Virtual Environment:**
+    * **On macOS/Linux:**
+        ```bash
+        source ai_support_env/bin/activate
+        ```
+    * **On Windows (Command Prompt):**
+        ```bash
+        ai_support_env\Scripts\activate.bat
+        ```
+    * **On Windows (PowerShell):**
+        ```bash
+        ai_support_env\Scripts\Activate.ps1
+        ```
+
+4.  **Install Dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+    (You might need to create a `requirements.txt` file first by running `pip freeze > requirements.txt` after installing all dependencies like `flask`, `psycopg2`, `openai`, `python-dotenv`, `requests`, `flask-cors`).
+
+5.  **Create `.env` File:**
+    Create a file named `ai_env.env` (or `.env`) in the root of your project directory and add your database and OpenAI credentials:
+    ```
+    DB_HOST=localhost
+    DB_NAME=support_ai_db
+    DB_USER=postgres
+    DB_PASSWORD=your_db_password
+    DB_PORT=5432
+    OPENAI_API_KEY=your_openai_api_key
+    ```
+    *If using a custom LLM, you'd add similar variables for its API endpoint and key.*
+
+### Database Setup
+
+1.  **Connect to your PostgreSQL database.**
+2.  **Create the `pgvector` extension:**
+    ```sql
+    CREATE EXTENSION IF NOT EXISTS vector;
+    ```
+3.  **Create the `support_tickets` table:**
+    ```sql
+    CREATE TABLE IF NOT EXISTS support_tickets (
+        id SERIAL PRIMARY KEY,
+        customer_email VARCHAR(255) NOT NULL,
+        subject VARCHAR(500) NOT NULL,
+        message TEXT NOT NULL,
+        category VARCHAR(100),
+        priority VARCHAR(50),
+        sentiment VARCHAR(50),
+        status VARCHAR(50) DEFAULT 'open',
+        embedding vector(1536), -- Adjust dimension if your LLM outputs different size
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        resolved_at TIMESTAMP WITH TIME ZONE
+    );
+
+    CREATE TABLE IF NOT EXISTS ticket_responses (
+        id SERIAL PRIMARY KEY,
+        ticket_id INTEGER NOT NULL REFERENCES support_tickets(id),
+        response_text TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        is_ai_generated BOOLEAN DEFAULT FALSE
+    );
+    ```
+
+### Running the Application
+
+1.  Ensure your virtual environment is activated.
+2.  Run the Flask application:
+    ```bash
+    python app.py
+    ```
+    The application will typically run on `http://0.0.0.0:5001`. You should see "Database connection successful!" and "Starting AI Support Ticket System..." messages.
+
+### Running Tests and Demonstrating AI
+
+1.  **Keep `app.py` running** in one terminal.
+2.  Open a **new terminal** and activate your virtual environment.
+3.  Run the `test_support.py` script to populate data and demonstrate AI capabilities:
+    ```bash
+    python test_support.py
+    ```
+    This script will:
+    * Verify the API health check.
+    * Submit sample tickets (you'll see AI classifications and suggested responses in the terminal).
+    * Update analytics in your database.
+
+### Accessing the Dashboard
+
+1.  With `app.py` still running, open your web browser.
+2.  Navigate to the `analytics_dashboard.html` file directly:
+    * `file:///path/to/your/project/folder/analytics_dashboard.html`
+    * You should see the analytics dashboard populate with data from the tickets submitted by `test_support.py`. Refresh the page to see updates after running `test_support.py` multiple times.
+
+---
+
+## Database Schema
+
+**`support_tickets` Table:**
+
+| Column            | Type                        | Description                                  |
+| :---------------- | :-------------------------- | :------------------------------------------- |
+| `id`              | `SERIAL PRIMARY KEY`        | Unique identifier for each ticket            |
+| `customer_email`  | `VARCHAR(255) NOT NULL`     | Email of the customer submitting the ticket  |
+| `subject`         | `VARCHAR(500) NOT NULL`     | Subject line of the support ticket           |
+| `message`         | `TEXT NOT NULL`             | Full message content of the ticket           |
+| `category`        | `VARCHAR(100)`              | AI-classified category (e.g., 'Technical Issue') |
+| `priority`        | `VARCHAR(50)`               | AI-assigned priority (e.g., 'Critical')      |
+| `sentiment`       | `VARCHAR(50)`               | AI-analyzed customer sentiment               |
+| `status`          | `VARCHAR(50)`               | Current status of the ticket (e.g., 'open', 'resolved') |
+| `embedding`       | `vector(1536)`              | High-dimensional vector representation of the ticket text for similarity search |
+| `created_at`      | `TIMESTAMP WITH TIME ZONE`  | Timestamp when the ticket was created      |
+| `resolved_at`     | `TIMESTAMP WITH TIME ZONE`  | Timestamp when the ticket was resolved (NULL if open) |
+
+**`ticket_responses` Table:**
+
+| Column            | Type                        | Description                                  |
+| :---------------- | :-------------------------- | :------------------------------------------- |
+| `id`              | `SERIAL PRIMARY KEY`        | Unique identifier for each response          |
+| `ticket_id`       | `INTEGER NOT NULL`          | Foreign key referencing `support_tickets.id` |
+| `response_text`   | `TEXT NOT NULL`             | The content of the response                  |
+| `created_at`      | `TIMESTAMP WITH TIME ZONE`  | Timestamp when the response was created    |
+| `is_ai_generated` | `BOOLEAN DEFAULT FALSE`     | True if response was AI-generated, False otherwise |
+
+---
+
+## Future Enhancements
+
+* **Custom LLM Integration:** Fine-tune or integrate other open-source LLMs (e.g., Llama, Mistral) for embeddings, classification, and response generation, trained on specific domain data.
+* **Full Agent Interface:** Develop a more comprehensive frontend interface for support agents to manage tickets, interact with suggested responses, and view similar tickets.
+* **Advanced Analytics:** Implement more sophisticated dashboards, predictive analytics (e.g., predicting resolution time), or anomaly detection for ticket trends.
+* **User Authentication:** Add user login and role-based access control.
+* **Webhooks/Integrations:** Integrate with actual email or ticketing systems (like ServiceNow) for real-time ticket ingestion and updates.
+
+---
+
+## Contributing
+
+Contributions are welcome! If you have suggestions or want to improve the project, please feel free to:
+1.  Fork the repository.
+2.  Create a new branch (`git checkout -b feature/your-feature-name`).
+3.  Make your changes.
+4.  Commit your changes (`git commit -m 'feat: Add new feature X'`).
+5.  Push to the branch (`git push origin feature/your-feature-name`).
+6.  Open a Pull Request.
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. *(If you don't have a LICENSE file, create one or choose a different license.)*
+
+---
+
+## Contact
+
+If you have any questions or feedback, feel free to reach out:
+
+* **Name:** Raja Sekhar Raju Y
+* **Email:** raj.y.aws@gmail.com
+* **LinkedIn:** [https://www.linkedin.com/in/yrajashekarr/](https://www.linkedin.com/in/yrajashekarr/)
+* **GitHub:** [https://github.com/rajashekar-y](https://github.com/rajashekar-y)
+
+---
+
+
+
+
+
