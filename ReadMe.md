@@ -71,11 +71,9 @@ The system aims to streamline the support process by providing:
 The project follows a client-server architecture:
 # AI-Powered Support Ticket System with pgvector and PostgreSQL
 
-![Dashboard Screenshot](assets/dashboard_screenshot.png)
-
 This project implements an intelligent support ticket system leveraging Artificial Intelligence (AI) and the power of PostgreSQL with the `pgvector` extension. It demonstrates how Large Language Models (LLMs) can be integrated directly with your database to automate classification, generate responses, and enable semantic search for customer support tickets.
 
-## Architecture
+
 
 The system consists of a Flask API backend, a PostgreSQL database with `pgvector` for vector embeddings, and an OpenAI LLM for AI capabilities.
 
