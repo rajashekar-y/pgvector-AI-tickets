@@ -259,10 +259,6 @@ Here is the complete README.md content. Please copy this text and save it as REA
 
 Markdown
 
-# AI-Powered Support Ticket System with pgvector and PostgreSQL
-
-![Dashboard Screenshot](assets/dashboard_screenshot.png)
-
 This project implements an intelligent support ticket system leveraging Artificial Intelligence (AI) and the power of PostgreSQL with the `pgvector` extension. It demonstrates how Large Language Models (LLMs) can be integrated directly with your database to automate classification, generate responses, and enable semantic search for customer support tickets.
 
 ## Architecture
@@ -390,7 +386,7 @@ The `analytics_dashboard.html` file provides a simple browser-based dashboard to
 
 The `init.sql` script (used by Docker Compose) or manual setup would create the `tickets` table with the following schema:
 
-```sql
+sql
 CREATE TABLE IF NOT EXISTS tickets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     customer_email VARCHAR(255) NOT NULL,
@@ -403,7 +399,9 @@ CREATE TABLE IF NOT EXISTS tickets (
     status VARCHAR(20) DEFAULT 'Open',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-Future Enhancements
+
+
+## Future Enhancements
 Advanced UI: Develop a more sophisticated frontend application (e.g., React, Vue.js) for agents to manage tickets, interact with AI suggestions, and view analytics.
 
 Real-time Updates: Implement WebSockets for real-time ticket updates in the dashboard.
@@ -422,12 +420,15 @@ Scalability: Implement caching, load balancing, and potentially a message queue 
 
 Monitoring & Logging: Integrate with monitoring tools.
 
-Contributing
+## Contributing
 Contributions are welcome! Please feel free to fork the repository, open issues, and submit pull requests.
 
-License
+## License
+
 NA
-Contact
+
+## Contact
+
 Rajashekar Raju
 raj.y.aws@gmail.com
 https://github.com/rajashekar-y
